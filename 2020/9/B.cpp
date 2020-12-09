@@ -19,6 +19,7 @@ void solve() {
     }
 
     int n = in.size();
+    ll target = 0;
     for (int i = 25; i < n; i++) {
         set<ll> seen;
         bool ok = false;
@@ -30,10 +31,25 @@ void solve() {
             seen.insert(in[j]);
         }
         if (!ok) {
-            cout << in[i] << endl;
+            target = in[i];
             break;
         }
     }
+
+    ll cur = 0;
+    for (int e = 0, b = 0; e < n; e++) {
+        cur += in[e];
+        while (cur > target) {
+            cur -= in[b];
+            b++;
+        }
+        if (cur == target) {
+            sort(in.begin()+b, in.begin()+e);
+            cout << in[b] + in[e] << endl;
+            break;
+        }
+    }
+
 
     return;
 }
