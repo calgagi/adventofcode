@@ -15,6 +15,13 @@ int n = 10007;
 vector<pair<int,int>> ops;
 vector<int> deck;
 
+void print_deck() {
+    for (int& x : deck) {
+        cout << x << " ";
+    }
+    cout << endl;
+}
+
 void parse(const string& s) {
     if (s == "deal into new stack") {
         ops.push_back(make_pair(0, 0));
@@ -27,7 +34,7 @@ void parse(const string& s) {
             i--;
         }
         reverse(x.begin(), x.end());
-        ops.push_back(make_pair(1, x));
+        ops.push_back(make_pair(1, stoi(x)));
     }
     else if (s.substr(0, 3) == "cut") {
         string x;
@@ -37,29 +44,34 @@ void parse(const string& s) {
             i--;
         }
         reverse(x.begin(), x.end());
-        ops.push_back(make_pair(2, x));
+        ops.push_back(make_pair(2, stoi(x)));
     }
     return;
 }
 
 void deal() {
+    cout << "DEAL" << endl;
     reverse(deck.begin(), deck.end());
     return;
 }
 
 void deali(int jump) {
-    vector<int> new_deck(n);
-    for (int i = 0, j = jump % n; i < n; j = (j + jump) % n, i += 1) {
-        new_deck[j] = new_deck[i];
+    cout << "DEALI " << jump << endl;
+    vector<int> new_deck(n, -1);
+    for (int i = 0, j = 0; i < n; j = (j + jump) % n, i += 1) {
+        new_deck[j] = deck[i];
     }
     deck = new_deck;
     return;
 }
 
 void cut(int x) {
-    x = (((x - n) % n) + n) % n;
+    cout << "CUT " << x << endl;
     vector<int> new_deck(n);
-    for (int i = 0, j = (i - x) 
+    for (int i = 0, j = i + x; i < n; i = i+1, j = (j + 1) % n) {
+        new_deck[i] = deck[j];
+    }
+    deck = new_deck;
     return;
 }
     
@@ -71,6 +83,9 @@ void solve() {
     }
 
     deck.resize(n);
+    for (int i = 0; i < n; i++) {
+        deck[i] = i;
+    }
 
     for (pair<int,int>& op : ops) {
         if (op.first == 0) {
@@ -80,9 +95,12 @@ void solve() {
             deali(op.second);
         }
         else if (op.first == 2) {
-            cut(op.second);
+            cut(op.second < 0 ? op.second + n : op.second);
         }
     }
+
+    print_deck();
+    cout << deck[2018] << " " << deck[2019] << " " << deck[2020] << endl;
 
     return;
 }
