@@ -11,16 +11,22 @@ using namespace std;
 typedef long long ll;
 typedef long double ld;
 
-vector<string> in;
 map<int, vector<string>> tile;
-map<int, vector<vector<string>>> transforms;
 vector<int> ids;
 
-// 0 = ID, 1 = orientation, 2 = direction
-map<array<int,2>, vectorarray<int,3>>> graph;
+// i = id, j = orientation, k = {0, 1, 2} where:
+//      0 = ID, 1 = orientation, 2 = direction
+map<int, vector<array<int,3>>> match;
 
 const int side = 12;
 const int w = 10;
+
+vector<vector<array<int,2>>> board(side, vector<array<int,2>>(side, {-1, -1}));
+map<int, bool> used;
+
+// only need below + right connections
+// we start at top left
+// go right all the way, down, repeat
 
 vector<string> rotate(const vector<string>& a) {
     vector<string> ans = a;
@@ -35,14 +41,32 @@ vector<string> rotate(const vector<string>& a) {
 
 vector<string> mirror(const vector<string>& a) {
     vector<string> ans = a;
-    int w = a.size();
-    for (int i = 0; i < w; i++) {
+    for (int i = 1; i < w-1; i++) {
         ans[i][0] = a[i][w-1];
+    }
+    for (int i = 0; i < w/2; i++) {
+        swap(ans[0][i], ans[0][w-i-1]);
+        swap(ans[w-1][i], ans[w-1][w-i-1]);
     }
     return ans;
 }
 
-bool matches(const vector<string>& a, const vector<string>& b, int direction) {
+// direction = 0 => a's right match with b's left
+// direction = 1 => a's up match with b's down
+bool matches(const vector<string>& a, const vector<string>& b, bool direction) {
+    for (int i = 0; i < w; i++) {
+        if (!direction) {
+            if (a[i][w-1] != b[i][0]) {
+                return false;
+            }
+        }
+        else {
+            if (a[0][i] != b[w-1][i]) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void print_tile(const vector<string>& x) {
@@ -52,7 +76,40 @@ void print_tile(const vector<string>& x) {
     cout << endl;
 }
 
+bool backtrack(int row, int col, int tile, int ori) {
+    if (row >= side || col >= side) {
+        return true;
+    }
+    if (used[tile]) {
+        return false;
+    }
+    if (row-1 >= 0) {
+        int id_above = board[row-1][col][0], ori_above = board[row-1][col][1];
+        bool ok = false;
+        for (array<int,3>& m : match[id_above][ori_above]) {
+            if (m[3] == 1 && m[0] == tile && m[1] == ori) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) {
+            return false;
+        }
+    }
+    used[tile] = true;
+    board[row][col] = {tile, ori};
+    for (array<int,3>& m : match[tile][ori]) {
+        if (m[3] == 0 && backtrack(row, col+1, m[0], m[1]) {
+                
+        }
+    }
+    used[tile] = false;
+    board[row][col] = {-1, -1};
+    return false;
+}
+
 void solve() {
+    vector<string> in;
     string line;
     while (getline(cin,line)) {
         in.push_back(line);
@@ -61,36 +118,53 @@ void solve() {
     for (int i = 0; i < (int) in.size(); i++) {
         string num = in[i].substr(in[i].find(" ") + 1);
         num.pop_back();
-        id = stoi(num);
+        int id = stoi(num);
         i++;
-        for (int j = 0; j < 10; j++, i++) {
+        for (int j = 0; j < w; j++, i++) {
             tile[id].push_back(in[i]);
         }
         ids.push_back(id);
+        match[id].resize(8);
     }
 
-    // create these 
-    for (const pair<int,vector<string>>& t : tile) {
-        vector<string> x = t.second;
-        transforms[t.first].push_back(x);
-        for (int i = 0; i < 4; i++) {
-            x = rotate(x);
-            transforms[t.first].push_back(x);
-            transforms[t.first].push_back(mirror(x));
-        }
-    }
-
+    // preprocess matches
     for (int i = 0; i < (int) ids.size(); i++) {
-        for (int j = i+1; j < (int) ids.size(); j++) {
-            for (int k = 0; k < 8; k++) {
-                for (int l = 0; l < 8; l++) {
-                    if (matches(transforms[ids[i]][k], transforms[ids[j]][l])) {
-                        graph[{i, k}].push_back({j, l});
-                    }
+        for (int j = 0; j < (int) ids.size(); j++) {
+            if (i == j) {
+                continue;
+            }
+            int id1 = ids[i], id2 = ids[j];
+            vector<string> tile1 = tile[id1], tile2 = tile[id2];
+            for (int orientation1 = 0; orientation1 < 8; orientation1++) {
+                if (orientation1 == 4) {
+                    tile1 = mirror(tile1);
                 }
+                for (int orientation2 = 0; orientation2 < 8; orientation2++) {
+                    if (orientation2 == 4) {
+                        tile2 = mirror(tile2);
+                    }
+                    for (int ori = 0; ori < 2; ori++) {
+                        if (matches(tile1, tile2, ori)) {
+                            match[id1][orientation1].push_back({id2, orientation2, ori});
+                        }
+                    }
+                    tile2 = rotate(tile2);
+                }
+                tile1 = rotate(tile1);
             }
         }
     }
+    
+    for (int& id : ids) {
+        for (int ori = 0; ori < 8; ori++) {
+            if (backtrack(0, 0, id, ori)) {
+                goto FOUND;
+            }
+        }
+    }
+
+FOUND:
+    cout << (ll) board[0][0] * board[side-1][0] * board[side-1][side-1] * board[0][side-1] << endl;
 
     return;
 }
