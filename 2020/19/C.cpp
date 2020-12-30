@@ -14,8 +14,6 @@ typedef long double ld;
 vector<string> received;
 vector<string> rules;
 
-// i = rule idx, j = left, k = right
-// -1 = uneval, 0 = no match, 1 = match
 int num_rules;
 
 struct Node {
@@ -24,7 +22,6 @@ struct Node {
 };
 
 vector<Node> rule_to_node(200);
-vector<unordered_set<string>> dp(200);
 
 // we know parsing is doing correctly from diff
 void parse_rule(string& s) {
@@ -63,53 +60,30 @@ void parse_rule(string& s) {
         }
     }
 
-    assert((node.match != ' ' + node.reps.size() != 0) == 1);
+    assert((node.match != ' ') ^ (node.reps.size() != 0));
     return;
 }
 
-void add_to_end(unordered_set<string>& a, const unordered_set<string>& b) {
-    if (a.size() == 0) {
-        a = b;
-        return;
+string grab_regex(int rule, int depth) {
+    if (depth == 0) {
+        return "";
     }
-    unordered_set<string> ans;
-    for (const string& x : a) {
-        for (const string& y : b) {
-            ans.insert(x + y);
-        }
-    }
-    a = ans;
-}
-
-void perform_union(unordered_set<string>& a, const unordered_set<string>& b) {
-    for (const string& x : b) {
-        a.insert(x);
-    }
-    return;
-}
-
-int counter_mx = 3;
-
-unordered_set<string> generate(int rule, int from, int counter) {
-    if (counter == 0 || dp[rule].size() != 0) {
-        return dp[rule];
-    }
-
-    Node& node = rule_to_node[rule];
+    const Node& node = rule_to_node[rule];
     if (node.match != ' ') {
-        dp[rule].insert(string(1, node.match));
+        return string(1, node.match);
     }
-   
-    for (vector<int>& rep : node.reps) {
-        unordered_set<string> cur;
-        for (int& x : rep) {
-            add_to_end(cur, generate(x, rule, (rule == x ? counter - 1 : counter_mx)));
+    string ans = "(";
+    for (const vector<int>& rep : node.reps) {
+        if (ans != "(" && ans.back() != '|') {
+            ans += "|";
         }
-        perform_union(dp[rule], cur);
+        for (const int& x : rep) {
+            ans += grab_regex(x, depth - 1);
+        }
     }
-    cout << rule << " " << dp[rule].size() << endl;
+    ans = ans == "(" ? "" : ans + ")";
 
-    return dp[rule];
+    return ans;
 }
 
 void solve() {
@@ -128,18 +102,18 @@ void solve() {
         parse_rule(s);
     }
 
-    unordered_set<string> generated = generate(0, 0, counter_mx);
-    for (const string& x : dp[8]) cout << x << endl;
-    for (const string& x : dp[11]) cout << x << endl;
+    string r = grab_regex(0, 22);
+    cout << r << endl;
 
-    ll ans = 0;
-    for (string& s : received) {
-        if (generated.count(s)) {
+    int ans = 0;
+    for (string& msg : received) {
+        if (regex_match(msg, regex(r))) {
             ans++;
         }
     }
+
     cout << ans << endl;
-    
+
     return;
 }
 
