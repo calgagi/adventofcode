@@ -30,23 +30,25 @@ map<int, bool> used;
 
 vector<string> rotate(const vector<string>& a) {
     vector<string> ans = a;
-    for (int i = 0; i < w-1; i++) {
-        ans[0][i] = a[i][w-1];
-        ans[i][w-1] = a[w-1][w-1-i];
-        ans[w-1][w-1-i] = a[w-1-i][0];
-        ans[w-1-i][0] = a[0][i];
+    int l = a.size();
+    for (int j = 0; j < l/2; j++) {
+        for (int i = j; i < l-1-j; i++) {
+            ans[j][i] = a[i][l-1-j];
+            ans[i][l-1-j] = a[l-1-j][w-1-i];
+            ans[l-1-j][l-1-i] = a[l-1-i][j];
+            ans[l-1-i][j] = a[j][i];
+        }
     }
     return ans;
 }
 
 vector<string> mirror(const vector<string>& a) {
     vector<string> ans = a;
-    for (int i = 1; i < w-1; i++) {
-        swap(ans[i][0], ans[i][w-1]);
-    }
-    for (int i = 0; i < w/2; i++) {
-        swap(ans[0][i], ans[0][w-i-1]);
-        swap(ans[w-1][i], ans[w-1][w-i-1]);
+    int l = a.size();
+    for (int j = 0; j < l; j++) {
+        for (int i = 0; i < l/2; i++) {
+            swap(ans[j][i], ans[j][l-i-1]);
+        }
     }
     return ans;
 }
@@ -116,7 +118,6 @@ bool backtrack(int row, int col, int tile, int ori) {
     
     // row+1
     if (col == side-1) {
-        cout << "HERE" << endl;
         for (const array<int,3>& m : match[board[row][0][0]][board[row][0][1]]) {
             if (m[2] == 1 && backtrack(row+1, 0, m[0], m[1])) {
                 return true;
@@ -194,7 +195,13 @@ void solve() {
     }
 
 FOUND:
+    // part 1
     cout << (ll) board[0][0][0] * board[side-1][0][0] * board[side-1][side-1][0] * board[0][side-1][0] << endl;
+
+    /* for (int i = 0; i < side; i++) { */
+    /*     for (int j = 0; j < side; j++) { */
+    /*         vector<string> gen_tile(ids */
+
 
     return;
 }
