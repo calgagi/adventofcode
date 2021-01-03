@@ -11,6 +11,8 @@ using namespace std;
 typedef long long ll;
 typedef long double ld;
 
+const vector<string> monster = {"                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   "};
+
 map<int, vector<string>> tile;
 vector<int> ids;
 
@@ -18,11 +20,13 @@ vector<int> ids;
 //      0 = ID, 1 = orientation, 2 = direction
 map<int, vector<vector<array<int,3>>>> match;
 
-const int side = 12;
 const int w = 10;
+const int side = 12;
 
 vector<vector<array<int,2>>> board(side, vector<array<int,2>>(side, {-1, -1}));
 map<int, bool> used;
+
+vector<array<int,2>> m_offsets;
 
 // only need below + right connections
 // we start at top left
@@ -31,12 +35,12 @@ map<int, bool> used;
 vector<string> rotate(const vector<string>& a) {
     vector<string> ans = a;
     int l = a.size();
-    for (int j = 0; j < l/2; j++) {
-        for (int i = j; i < l-1-j; i++) {
-            ans[j][i] = a[i][l-1-j];
-            ans[i][l-1-j] = a[l-1-j][w-1-i];
-            ans[l-1-j][l-1-i] = a[l-1-i][j];
-            ans[l-1-i][j] = a[j][i];
+    for (int i = 0; i < l/2; i++) {
+        for (int j = i; j < l - i - 1; j++) {
+            ans[i][j] = a[j][l-i-1];
+            ans[j][l-i-1] = a[l-i-1][l-j-1];
+            ans[l-i-1][l-j-1] = a[l-j-1][i];
+            ans[l-j-1][i] = a[i][j];
         }
     }
     return ans;
@@ -54,7 +58,7 @@ vector<string> mirror(const vector<string>& a) {
 }
 
 // direction = 0 => a's right match with b's left
-// direction = 1 => a's up match with b's down
+// direction = 1 => a's down match with b's up
 bool matches(const vector<string>& a, const vector<string>& b, bool direction) {
     for (int i = 0; i < w; i++) {
         if (!direction) {
@@ -63,7 +67,7 @@ bool matches(const vector<string>& a, const vector<string>& b, bool direction) {
             }
         }
         else {
-            if (a[0][i] != b[w-1][i]) {
+            if (a[w-1][i] != b[0][i]) {
                 return false;
             }
         }
@@ -138,6 +142,48 @@ bool backtrack(int row, int col, int tile, int ori) {
     return false;
 }
 
+vector<string> grab_tile(int id, int orientation) { 
+    vector<string> tile1 = tile[id];
+    tile1.erase(tile1.begin());
+    tile1.pop_back();
+    for (string& x : tile1) {
+        x.erase(x.begin());
+        x.pop_back();
+    }
+
+    for (int i = 0; i < orientation; i++) {
+        tile1 = rotate(tile1);
+    }
+    if (orientation >= 4) {
+        tile1 = mirror(tile1);
+    }
+    return tile1;
+}
+
+const int m_len = side * (w - 2);
+
+int gomonster(const vector<string>& t) {
+    int ans = 0;
+    for (int i = 0; i < m_len; i++) {
+        for (int j = 0; j < m_len; j++) {
+            bool good = true;
+            for (const array<int,2>& d : m_offsets) {
+                int r = d[0] + i, c = d[1] + j;
+                if (r >= 0 && r < m_len && c < m_len && c >= 0 && t[r][c] == '#') {
+                }
+                else {
+                    good = false;
+                    break;
+                }
+            }
+            if (good) {
+                ans++;
+            }
+        }
+    }
+    return ans;
+}
+
 void solve() {
     vector<string> in;
     string line;
@@ -166,12 +212,12 @@ void solve() {
             int id1 = ids[i], id2 = ids[j];
             vector<string> tile1 = tile[id1];
             for (int orientation1 = 0; orientation1 < 8; orientation1++) {
-                if (orientation1 == 4) {
+                if (orientation1 >= 4) {
                     tile1 = mirror(tile1);
                 }
                 vector<string> tile2 = tile[id2];
                 for (int orientation2 = 0; orientation2 < 8; orientation2++) {
-                    if (orientation2 == 4) {
+                    if (orientation2 >= 4) {
                         tile2 = mirror(tile2);
                     }
                     for (int ori = 0; ori < 2; ori++) {
@@ -179,7 +225,13 @@ void solve() {
                             match[id1][orientation1].push_back({id2, orientation2, ori});
                         }
                     }
+                    if (orientation2 >= 4) {
+                        tile2 = mirror(tile2);
+                    }
                     tile2 = rotate(tile2);
+                }
+                if (orientation1 >= 4) {
+                    tile1 = mirror(tile1);
                 }
                 tile1 = rotate(tile1);
             }
@@ -196,11 +248,59 @@ void solve() {
 
 FOUND:
     // part 1
-    cout << (ll) board[0][0][0] * board[side-1][0][0] * board[side-1][side-1][0] * board[0][side-1][0] << endl;
+    /* cout << (ll) board[0][0][0] * board[side-1][0][0] * board[side-1][side-1][0] * board[0][side-1][0] << endl; */
 
     /* for (int i = 0; i < side; i++) { */
     /*     for (int j = 0; j < side; j++) { */
     /*         vector<string> gen_tile(ids */
+
+    // part 2
+    // generate all points where '#' is in monster
+    for (int i = 0; i < (int) monster.size(); i++) {
+        for (int j = 0; j < (int) monster[i].length(); j++) {
+            if (monster[i][j] == '#') {
+                m_offsets.push_back({i, j});
+            }
+        }
+    }
+    cout << m_offsets.size() << endl;
+    cout << m_len << endl;
+
+    // good
+    vector<string> search(m_len, "");
+    
+    for (int i = 0; i < (int) board.size(); i++) {
+        for (int j = 0; j < (int) board[i].size(); j++) {
+            vector<string> tile1 = grab_tile(board[i][j][0], board[i][j][1]);
+            for (int k = 0; k < (int) tile1.size(); k++) {
+                search[(i * (w - 2)) + k] += tile1[k];
+            }
+        }
+    }
+
+
+    int ans = 0;
+    for (const string& x : search) {
+        for (const char& c : x) {
+            ans += c == '#';
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        int k = gomonster(search);
+        if (k) {
+            print_tile(search);
+            cout << ans - k * 15 << endl;
+        }
+        search = mirror(search);
+        k = gomonster(search);
+        if (k) {
+            print_tile(search);
+            cout << ans - k * 15 << endl;
+        }
+        search = mirror(search);
+        search = rotate(search);
+    }
 
 
     return;
