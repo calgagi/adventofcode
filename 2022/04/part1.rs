@@ -78,4 +78,25 @@ fn main() {
     let mut scanner = Scanner::new();
     scanner.scan();
 
+    let mut ans = 0;
+    while !scanner.is_empty() {
+        let mut a = scanner.get_i64();
+        scanner.get_char();
+        let mut b = scanner.get_i64();
+        scanner.get_char();
+        let mut c = scanner.get_i64();
+        scanner.get_char();
+        let mut d = scanner.get_i64();
+
+        if a > c || (a == c && b < d) {
+            std::mem::swap(&mut a, &mut c);
+            std::mem::swap(&mut b, &mut d);
+        }
+
+        if a <= c && b >= d {
+            ans += 1;
+        }
+    }
+
+    println!("{}", ans);
 }
