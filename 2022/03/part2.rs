@@ -57,12 +57,51 @@ impl Scanner {
         self.space();
         return chars.iter().collect::<String>();
     }
+
+    fn is_empty(&self) -> bool {
+        return self.data.is_empty();
+    }
+}
+
+fn priority(c: char) -> usize {
+    if (c as usize) <= ('z' as usize) && (c as usize) >= ('a' as usize) {
+        return (c as usize) - ('a' as usize) + 1;
+    }
+    else {
+        return (c as usize) - ('A' as usize) + 27;
+    }
 }
 
 // ===============================================
 // main
 fn main() {
-    let mut s = Scanner::new();
-    s.scan();
+    let mut scanner = Scanner::new();
+    scanner.scan();
 
+    let mut sacks = Vec::new();
+    while !scanner.is_empty() {
+        sacks.push(scanner.get_string());
+    }
+
+    let mut ans = 0;
+    let mut vs = vec![vec![false; 52]; 3];
+    let mut counter = 0;
+    for s in sacks {
+        for c in s.chars() {
+            vs[counter % 3][priority(c) - 1] = true;
+        }
+        counter += 1;
+        if counter == 3 {
+            for i in 0..52 {
+                if vs[0][i] && vs[1][i] && vs[2][i] {
+                    ans += i + 1;
+                    break;
+                }
+            }
+            counter = 0;
+            vs = vec![vec![false; 52]; 3];
+        }
+    }
+
+    println!("{}", ans);
 }
