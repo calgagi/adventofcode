@@ -31,7 +31,7 @@ impl Scanner {
         }
     }
 
-    fn get_i64(&mut self) -> i64 {
+    fn get_int(&mut self) -> usize {
         let mut ans: String = String::from("");
         while let Some(c) = self.try_get_char() {
             if !(c.is_digit(10) || (ans.len() == 0 && c == '-')) { break; }
@@ -56,7 +56,21 @@ impl Scanner {
     fn try_get_char(&mut self) -> Option<char> { return self.data.front().copied(); }
 
     fn get_char(&mut self) -> char { return self.try_get_char().unwrap(); }
+
+    fn get_line(&mut self) -> String {
+        let mut ans: String = String::from("");
+        while let Some(c) = self.try_get_char() {
+            self.data.pop_front();
+            if matches!(c, '\n') { break; }
+            ans.push(c);
+        }
+        return ans;
+    }
+
+    fn is_empty(&self) -> bool { return self.data.is_empty(); }
 }
+
+
 
 // ===============================================
 // main

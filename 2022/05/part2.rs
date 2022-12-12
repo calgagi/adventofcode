@@ -107,8 +107,13 @@ fn main() {
         scanner.get_string();
         let to = scanner.get_int();
 
+        let mut vec = Vec::new();
         for _ in 0..len {
             let c = stacks[from - 1].pop_back().unwrap();
+            vec.push(c);
+        }
+        vec.reverse();
+        for c in vec {
             stacks[to - 1].push_back(c);
         }
     }
